@@ -78,7 +78,6 @@ def calc_disp(y, y_mean):
 
 def matrix_print(y, x_list, y_mean, disper):
     global header_table
-    header_table = ["№", "x1", "x2", "x3", "x1x2", "x1x3", "x2x3", "x1x2x3", "x1^2", "x2^2", "x3^2"]
     table = []
     for i in range(N):
         table.append([i + 1])
@@ -160,33 +159,42 @@ def fisher_check():
 x_min = np.array([-40, -35, 20])
 x_max = np.array([20, 15, 25])
 b_initial = np.array([2.2, 1.6, 9.2, 9.5, 0.2, 0.9, 8.7, 9.1, 0.8,0.7, 6.5])
+header_table = ["№", "x1", "x2", "x3", "x1x2", "x1x3", "x2x3", "x1x2x3", "x1^2", "x2^2", "x3^2"]
 m = 2
 k = 3
 p = 0
 N = 14
 l = k**(1/2)
 q = 0.05
+fisher_count = 1
+fisher = False
 x_code = x_table(np.array([-1, -1, -1]), np.array([1, 1, 1]))
 x_list = x_table(x_min, x_max)
-y = y_val_table(x_list, b_initial)
-y_mean = np.sum(y, axis=1) / m
-disper = calc_disp(y, y_mean)
-cohren(disper)
-while not cohren(disper):
-    m = m + 1
+while fisher_count < 20 and not fisher:
     y = y_val_table(x_list, b_initial)
     y_mean = np.sum(y, axis=1) / m
     disper = calc_disp(y, y_mean)
+    cohren(disper)
+    while not cohren(disper):
+        m = m + 1
+        y = y_val_table(x_list, b_initial)
+        y_mean = np.sum(y, axis=1) / m
+        disper = calc_disp(y, y_mean)
+    print(f"\nm = {m:} \nGp = {Gp:}\t\t\tGt = {Gt:}\nGp < Gt -> According to Cochran's C-test homogeneity of variance is confirmed with probability of 0.95")
+    b = calc_coef(x_list, y_mean)
+    eq_val_check(x_list, b)
+    student_check()
+    fisher_check()
+    fisher = bool(Fp < Ft)
+    if fisher:
+        print("Fp > Ft = > According to Fisher's F-test model is adequate to the original with probability of 0.95.")
+    else:
+        print("Fp < Ft = > According to Fisher's F-test model is not adequate to the original with probability of 0.95.\nIncreasing m...")
+        m += 1
+        fisher_count += 1
+if not fisher:
+    print(f"m = {m:}\nThe model is still not adequate to the original. Here is the data for the last experiment:")
 print("Normalized Experiment:")
 matrix_print(y, x_code, y_mean, disper)
 print("\n\nNaturalized Experiment:")
 matrix_print(y, x_list, y_mean, disper)
-print(f"\nm = {m:} \nGp = {Gp:}\t\t\tGt = {Gt:}\nGp < Gt -> According to Cochran's C-test homogeneity of variance is confirmed with probability of 0.95")
-b = calc_coef(x_list, y_mean)
-eq_val_check(x_list, b)
-student_check()
-fisher_check()
-if Fp > Ft:
-    print("Fp > Ft = > According to Fisher's F-test model is not adequate to the original with probability of 0.95.")
-else:
-    print("Fp < Ft = > According to Fisher's F-test model is adequate to the original with probability of 0.95.")
